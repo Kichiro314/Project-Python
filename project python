@@ -1,3 +1,8 @@
+import pygame, sys
+
+clock = pygame.time.Clock()
+
+from pygame.locals import *
 pygame.init() # initiates pygame
 
 pygame.display.set_caption('Platformer Naruto way to Konoha')
@@ -13,8 +18,36 @@ moving_left = False
 vertical_momentum = 0
 air_timer = 0
 
-true_scroll = [0,0]
+grass_img = pygame.image.load('grass.png')
+dirt_img = pygame.image.load('dirt.png')
 
+oldgrass_img = pygame.image.load('oldgrass.png')
+olddirt_img = pygame.image.load('olddirt.png')
+
+player_img = pygame.image.load('player.png')
+player_img.set_colorkey((255,255,255))
+
+radius = 4
+
+def change_blocks(x, y, radius, current_block):
+    for i in range (x - radius, x + radius + 1):
+        for j in range(y - radius, y + radius + 1):
+            if ((i - x) ** 2 + (j - y) ** 2) ** 0.5 <= radius:
+                if current_block == 1:
+                    screen.blit(olddirt_img, (i * block_size, j * block_size))
+                else:
+                    screen.blit(dirt_img, (i * block_size, j * block_size))
+
+
+block_x = 10
+block_y = 10
+block_size = 16
+
+screen.blit(dirt_img, (block_x * block_size, block_y * block_size))
+                        
+pygame.display.update()
+
+ 
 def load_map(path):
     f = open(path + '.txt','r')
     data = f.read()
@@ -27,14 +60,14 @@ def load_map(path):
 
 game_map = load_map('map')
 
-grass_img = pygame.image.load('grass.png')
-dirt_img = pygame.image.load('dirt.png')
+true_scroll = [0,0]
 
-player_img = pygame.image.load('player.png').convert()
-player_img.set_colorkey((255,255,255))
+
+
 
 player_rect = pygame.Rect(100,100,5,13)
 
+       
 background_objects = [[0.25,[120,10,70,400]],[0.25,[280,30,40,400]],[0.5,[30,40,40,400]],[0.5,[130,90,100,400]],[0.5,[300,80,120,400]]]
 
 def collision_test(rect,tiles):
@@ -85,15 +118,19 @@ while True: # game loop
 
     tile_rects = []
     y = 0
-    for layer in game_map:
+     for layer in game_map:
         x = 0
         for tile in layer:
             if tile == '1':
                 display.blit(dirt_img,(x*16-scroll[0],y*16-scroll[1]))
             if tile == '2':
                 display.blit(grass_img,(x*16-scroll[0],y*16-scroll[1]))
+            if tile == '3':
+                display.blit(olddirt_img,(x*16-scroll[0],y*16-scroll[1]))
+            if tile == '4':
+                display.blit(oldgrass_img,(x*16-scroll[0],y*16-scroll[1]))
             if tile != '0':
-                tile_rects.append(pygame.Rect(x*16,y*16,16,16))
+                tile_rects.append(pygame.Rect(x*15.9,y*15,18,18))
             x += 1
         y += 1
 
@@ -125,6 +162,10 @@ while True: # game loop
         if event.type == KEYDOWN:
             if event.key == K_RIGHT:
                 moving_right = True
+            if event.key == K_z:
+                current_block = 1 if screen.get_at((block_x * block_size, block_y * block_size)) == (255, 255, 255, 255) else 2
+                change_blocks(block_x, block_y, radius, current_block)
+                pygame.display.update()
             if event.key == K_LEFT:
                 moving_left = True
             if event.key == K_UP:
@@ -139,3 +180,4 @@ while True: # game loop
     screen.blit(pygame.transform.scale(display,WINDOW_SIZE),(0,0))
     pygame.display.update()
     clock.tick(60)
+
