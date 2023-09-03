@@ -1,5 +1,7 @@
 import pygame, sys
 
+from pygame.math import Vector2
+
 clock = pygame.time.Clock()
 
 from pygame.locals import *
@@ -13,6 +15,12 @@ screen = pygame.display.set_mode(WINDOW_SIZE,0,32) # initiate the window
 
 display = pygame.Surface((300,200)) # used as the surface for rendering, which is scaled
 
+AURA_COLOR = (255, 0, 0)
+
+AURA_RADIUS = 10
+
+AURA_SPEED = 5
+
 moving_right = False
 moving_left = False
 vertical_momentum = 0
@@ -24,30 +32,20 @@ dirt_img = pygame.image.load('dirt.png')
 oldgrass_img = pygame.image.load('oldgrass.png')
 olddirt_img = pygame.image.load('olddirt.png')
 
+newgrass_img = pygame.image.load('newgrass.png')
+newdirt_img = pygame.image.load('newdirt.png')
+
 player_img = pygame.image.load('player.png')
 player_img.set_colorkey((255,255,255))
-
-radius = 4
-
-def change_blocks(x, y, radius, current_block):
-    for i in range (x - radius, x + radius + 1):
-        for j in range(y - radius, y + radius + 1):
-            if ((i - x) ** 2 + (j - y) ** 2) ** 0.5 <= radius:
-                if current_block == 1:
-                    screen.blit(olddirt_img, (i * block_size, j * block_size))
-                else:
-                    screen.blit(dirt_img, (i * block_size, j * block_size))
-
-
-block_x = 10
-block_y = 10
-block_size = 16
-
-screen.blit(dirt_img, (block_x * block_size, block_y * block_size))
                         
 pygame.display.update()
 
- 
+map1 = []
+
+current_map = []
+
+player_movement = [0,0]
+
 def load_map(path):
     f = open(path + '.txt','r')
     data = f.read()
@@ -58,11 +56,68 @@ def load_map(path):
         game_map.append(list(row))
     return game_map
 
-game_map = load_map('map')
+map1 = load_map('map')
+
+def load_map(path):
+    f = open(path + '.txt','r')
+    data = f.read()
+    f.close()
+    data = data.split('\n')
+    game_map = []
+    for row in data:
+        game_map.append(list(row))
+    return game_map
+
+oldmap = load_map('oldmap')
+
+
+def load_map(path):
+    f = open(path + '.txt','r')
+    data = f.read()
+    f.close()
+    data = data.split('\n')
+    game_map = []
+    for row in data:
+        game_map.append(list(row))
+    return game_map
+
+newmap = load_map('newmap')
+
+
+
+
+def create_map():
+    with open('map.txt', 'r') as f1:
+        map1 = f1.read().splitlines()
+    with open('oldmap.txt', 'r') as f2:
+        oldmap = f2.read().splitlines()
+    with open('newmap.txt', 'r') as f3:
+        newmap = f3.read().splitlines()
+    current_map = map1
+
+
+class Aura:
+    def __init__(self, player_movement):
+        self.pos = Vector2(player_movement)
+        self.radius = AURA_RADIUS
+        self.color = AURA_COLOR
+
+    def draw(self, surface):
+        pygame.draw.circle(surface, self.color, self.pos, self.radius)
+
+def update_aura(aura, player_movement):
+    target_pos = Vector2(player_movement)
+    direction = target_pos - aura.pos
+    if direction.length() > AURA_SPEED:
+        direction.scale_to_length(AURA_SPEED)
+    aura.pos += direction
+
+
+
+current_map = map1
+
 
 true_scroll = [0,0]
-
-
 
 
 player_rect = pygame.Rect(100,100,5,13)
@@ -99,6 +154,8 @@ def move(rect,movement,tiles):
             collision_types['top'] = True
     return rect, collision_types
 
+aura = Aura(player_movement)
+
 while True: # game loop
     display.fill((146,244,255)) # clear screen by filling it with blue
 
@@ -118,7 +175,7 @@ while True: # game loop
 
     tile_rects = []
     y = 0
-     for layer in game_map:
+    for layer in current_map:
         x = 0
         for tile in layer:
             if tile == '1':
@@ -129,10 +186,18 @@ while True: # game loop
                 display.blit(olddirt_img,(x*16-scroll[0],y*16-scroll[1]))
             if tile == '4':
                 display.blit(oldgrass_img,(x*16-scroll[0],y*16-scroll[1]))
+            if tile == '5':
+                display.blit(newdirt_img,(x*16-scroll[0],y*16-scroll[1]))
+            if tile == '6':
+                display.blit(newgrass_img,(x*16-scroll[0],y*16-scroll[1]))
             if tile != '0':
                 tile_rects.append(pygame.Rect(x*15.9,y*15,18,18))
             x += 1
         y += 1
+
+
+    update_aura(aura, player_movement)
+    aura.draw(screen)
 
     player_movement = [0,0]
     if moving_right == True:
@@ -162,12 +227,14 @@ while True: # game loop
         if event.type == KEYDOWN:
             if event.key == K_RIGHT:
                 moving_right = True
-            if event.key == K_z:
-                current_block = 1 if screen.get_at((block_x * block_size, block_y * block_size)) == (255, 255, 255, 255) else 2
-                change_blocks(block_x, block_y, radius, current_block)
-                pygame.display.update()
             if event.key == K_LEFT:
                 moving_left = True
+            if event.key == K_z:
+                current_map = oldmap
+            if event.key == K_x:
+                current_map = map1
+            if event.key == K_c:
+                current_map = newmap
             if event.key == K_UP:
                 if air_timer < 6:
                     vertical_momentum = -5
@@ -180,4 +247,3 @@ while True: # game loop
     screen.blit(pygame.transform.scale(display,WINDOW_SIZE),(0,0))
     pygame.display.update()
     clock.tick(60)
-
