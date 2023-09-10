@@ -15,11 +15,11 @@ screen = pygame.display.set_mode(WINDOW_SIZE,0,32) # initiate the window
 
 display = pygame.Surface((300,200)) # used as the surface for rendering, which is scaled
 
-AURA_COLOR = (255, 0, 0)
+AURA_COLOR = (255, 0, 0, 255)
 
-AURA_RADIUS = 10
+AURA_RADIUS = 0.000001
 
-AURA_SPEED = 5
+AURA_SPEED = 20
 
 moving_right = False
 moving_left = False
@@ -196,8 +196,7 @@ while True: # game loop
         y += 1
 
 
-    update_aura(aura, player_movement)
-    aura.draw(screen)
+    
 
     player_movement = [0,0]
     if moving_right == True:
@@ -245,5 +244,8 @@ while True: # game loop
                 moving_left = False
         
     screen.blit(pygame.transform.scale(display,WINDOW_SIZE),(0,0))
+    update_aura(aura, player_movement)
+    aura.draw(screen)
     pygame.display.update()
     clock.tick(60)
+    
